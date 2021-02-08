@@ -1,19 +1,14 @@
 import csv
 import sys
 
-
-
-
-
 def write_output_file():
     '''
     Writes a dummy output file using the python csv writer, update this 
     to accept as parameter the found trace links. 
     '''
-    with open('/output/links.csv', 'w') as csvfile:
+    with open('output/links.csv', 'w') as csvfile:
 
         writer = csv.writer(csvfile, delimiter=",", quotechar="\"", quoting=csv.QUOTE_MINIMAL)
-
 
         fieldnames = ["id", "links"]
 
@@ -42,7 +37,7 @@ if __name__ == "__main__":
     print(f"Hello world, running with matchtype {match_type}!")
 
     # Read input low-level requirements and count them (ignore header line).
-    with open("/input/low.csv", "r") as inputfile:
+    with open("input/low.csv", "r") as inputfile:
         print(f"There are {len(inputfile.readlines()) - 1} low-level requirements")
 
 
