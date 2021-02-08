@@ -6,11 +6,13 @@ import numpy as np
 from nltk.corpus import stopwords
 import re
 from nltk.stem import SnowballStemmer
+import math
 
 nltk.download('stopwords')
 STOP_WORDS = stopwords.words("english")
 REMOVE_STOPWORDS=True
 STEM_WORDS=True
+n_words = 0
 
 def write_output_file():
     '''
@@ -58,6 +60,20 @@ def preprocess(string):
 
     return string
 
+#Vector representation
+def vr(r):
+    print(r)
+    words = r.split()
+    word_count = len(words)
+    weights = [0]*n_words
+
+    for i, k in enumerate(inverted):
+        if k in words:
+            tf = words.count(k)/word_count
+            idf = math.log(n/(len(inverted.get(k))),2)
+            weights[i] = tf*idf
+    return weights
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Please provide an argument to indicate which matcher should be used")
@@ -81,12 +97,55 @@ if __name__ == "__main__":
     print(f"There are {len(high)} high-level requirements")
     low = pd.read_csv("input/low.csv")
     print(f"There are {len(low)} low-level requirements")
+    
+    #Total number of requirements
+    n = len(high) + len(low)
 
-    #Preprocess both of them
-    for index, row in high.iterrows():
-        high.at[index, 'text'] = preprocess(row['text'])
-    for index, row in low.iterrows():
-        low.at[index, 'text'] = preprocess(row['text'])
+    
+    #Preprocess text, add to master vocabulary, find frequency
+    master_vocabulary = []
+    tf = [] #frequency of words of the master vocabulary
+    d = [] #the number of requirements containing a word of the master vocabulary 
+    for df in [high, low]:
+        for index, row in df.iterrows():
+            r = preprocess(row['text']) #requirement
+            df.at[index, 'text'] = r
+            #Split words, add them to the master vocabulary, and find their frequencies
+            words = r.split()
+            words_added = []   
+            for word in words:
+                if word not in master_vocabulary:
+                    master_vocabulary.append(word)
+                    tf.append(1)
+                else:
+                    tf[master_vocabulary.index(word)] += 1
+                    #if word not in words_added:
+                       # d[master_vocabulary.index(word)] += 1
+
+    #Preprocess text and add it to the list of requirements
+    requirements = []
+    for df in [high, low]:
+        for index, row in df.iterrows():
+            r = preprocess(row['text']) #requirement
+            df.at[index, 'text'] = r
+            requirements.append(r)
+
+    #Inverted index of words, i.e master vocabulary and in which requirements every word is at
+    inverted = {}
+    for i in range(1,len(requirements)):
+        words = requirements[i].split()    
+        for word in words:
+            inverted.setdefault(word, [])
+            if i not in inverted[word]:
+                inverted[word].append(i)
+
+    n_words = len(inverted)
+
+    #Vector representation (list containing lists, i.e the vector representation of every requirement)
+    vector_representation = [] * n_words
+    for r in requirements:
+        vector_representation.append(vr(r))
+    print(vector_representation)
 
 
     write_output_file()
