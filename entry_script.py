@@ -7,6 +7,11 @@ from nltk.corpus import stopwords
 import re
 from nltk.stem import SnowballStemmer
 
+nltk.download('stopwords')
+STOP_WORDS = stopwords.words("english")
+REMOVE_STOPWORDS=True
+STEM_WORDS=True
+
 def write_output_file():
     '''
     Writes a dummy output file using the python csv writer, update this 
@@ -66,14 +71,22 @@ if __name__ == "__main__":
 
     print(f"Hello world, running with matchtype {match_type}!")
 
+    #GIVEN CODE, REMOVE IT?????
     # Read input low-level requirements and count them (ignore header line).
-    with open("input/low.csv", "r") as inputfile:
-        print(f"There are {len(inputfile.readlines()) - 1} low-level requirements")
+    #with open("input/low.csv", "r") as inputfile:
+      #  print(f"There are {len(inputfile.readlines()) - 1} low-level requirements")
 
-    nltk.download('stopwords')
-    STOP_WORDS = stopwords.words("english")
-    REMOVE_STOPWORDS=True
-    STEM_WORDS=True
-    print(preprocess("the lion is fat and running"))
+    #Load high and low .csv files into pandas dataframes
+    high = pd.read_csv("input/high.csv")
+    print(f"There are {len(high)} high-level requirements")
+    low = pd.read_csv("input/low.csv")
+    print(f"There are {len(low)} low-level requirements")
+
+    #Preprocess both of them
+    for index, row in high.iterrows():
+        high.at[index, 'text'] = preprocess(row['text'])
+    for index, row in low.iterrows():
+        low.at[index, 'text'] = preprocess(row['text'])
+
 
     write_output_file()
