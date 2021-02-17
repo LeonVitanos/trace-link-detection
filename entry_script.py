@@ -7,6 +7,7 @@ from nltk.corpus import stopwords
 import re
 from nltk.stem import SnowballStemmer
 import math
+from sklearn.metrics.pairwise import cosine_similarity
 
 nltk.download('stopwords')
 STOP_WORDS = stopwords.words("english")
@@ -103,7 +104,7 @@ if __name__ == "__main__":
 
     
     #Preprocess text, add to master vocabulary, find frequency
-    master_vocabulary = []
+    '''master_vocabulary = []
     tf = [] #frequency of words of the master vocabulary
     d = [] #the number of requirements containing a word of the master vocabulary 
     for df in [high, low]:
@@ -121,7 +122,7 @@ if __name__ == "__main__":
                     tf[master_vocabulary.index(word)] += 1
                     #if word not in words_added:
                        # d[master_vocabulary.index(word)] += 1
-
+'''
     #Preprocess text and add it to the list of requirements
     requirements = []
     for df in [high, low]:
@@ -145,7 +146,24 @@ if __name__ == "__main__":
     vector_representation = [] * n_words
     for r in requirements:
         vector_representation.append(vr(r))
-    print(vector_representation)
+    #print(vector_representation)
+    print(inverted)
 
+    #similarity_matrix = [[] * len(low)] * len(high)
+    similarity_matrix = [] * len(high)
+    for h in range(1, len(high)):
+        row = [] * len(low)
+        for l in range(1, len(low)):
+            vecSize = len(vector_representation[0])
+            arrH = np.array(vector_representation[h]).reshape(-1, 1)
+            arrL = np.array(vector_representation[len(high) + l]).reshape(-1, 1)
+
+            data = {'high': vector_representation[h],
+                    'low': vector_representation[len(high) + l]}
+            df = pd.DataFrame (data, columns = ['high','low'])
+            row.append(cosine_similarity(df))
+            #similarity_matrix[h][l] = cosine_similarity(vector_representation[h], vector_representation[len(high) + l])
+        similarity_matrix.append(row)
+    print(similarity_matrix)
 
     write_output_file()
