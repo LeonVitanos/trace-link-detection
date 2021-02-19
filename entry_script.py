@@ -63,7 +63,7 @@ def preprocess(string):
 
 #Vector representation
 def vr(r):
-    print(r)
+    #print(r)
     words = r.split()
     word_count = len(words)
     weights = [0]*n_words
@@ -125,15 +125,20 @@ if __name__ == "__main__":
 '''
     #Preprocess text and add it to the list of requirements
     requirements = []
+    #print(f"{high.at[0, 'text']}")
+    #print(f"{low.at[0, 'text']}")
     for df in [high, low]:
         for index, row in df.iterrows():
             r = preprocess(row['text']) #requirement
             df.at[index, 'text'] = r
             requirements.append(r)
 
+    #print(f"{requirements[0]}")
+    #print(f"{requirements[len(high)]}")
+
     #Inverted index of words, i.e master vocabulary and in which requirements every word is at
     inverted = {}
-    for i in range(1,len(requirements)):
+    for i in range(0,len(requirements)):
         words = requirements[i].split()    
         for word in words:
             inverted.setdefault(word, [])
@@ -146,24 +151,23 @@ if __name__ == "__main__":
     vector_representation = [] * n_words
     for r in requirements:
         vector_representation.append(vr(r))
-    #print(vector_representation)
-    print(inverted)
+    #print(f"{vector_representation[0]}")
+    #print(f"{vector_representation[len(high)]}")
+    #print(inverted)
 
     #similarity_matrix = [[] * len(low)] * len(high)
     similarity_matrix = [] * len(high)
-    for h in range(1, len(high)):
+    for h in range(0, len(high)):
         row = [] * len(low)
-        for l in range(1, len(low)):
-            vecSize = len(vector_representation[0])
-            arrH = np.array(vector_representation[h]).reshape(-1, 1)
-            arrL = np.array(vector_representation[len(high) + l]).reshape(-1, 1)
-
-            data = {'high': vector_representation[h],
-                    'low': vector_representation[len(high) + l]}
-            df = pd.DataFrame (data, columns = ['high','low'])
-            row.append(cosine_similarity(df))
-            #similarity_matrix[h][l] = cosine_similarity(vector_representation[h], vector_representation[len(high) + l])
+        for l in range(0, len(low)):
+            arrH = np.array(vector_representation[h]).reshape(1, -1)
+            arrL = np.array(vector_representation[len(high) + l]).reshape(1, -1)
+            row.append(cosine_similarity(arrH, arrL)[0][0])
         similarity_matrix.append(row)
     print(similarity_matrix)
+
+    #arrH = np.array([0.1, 0.5, 0.8]).reshape(1, -1)
+    #arrL = np.array([0.5, 0.3, 0.9]).reshape(1, -1)
+    #print(f"{cosine_similarity(arrH, arrL)}")
 
     write_output_file()
