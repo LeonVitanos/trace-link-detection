@@ -15,7 +15,7 @@ REMOVE_STOPWORDS=True
 STEM_WORDS=True
 n_words = 0
 
-def write_output_file():
+def write_output_file(link):
     '''
     Writes a dummy output file using the python csv writer, update this 
     to accept as parameter the found trace links. 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 '''
     #Preprocess text and add it to the list of requirements
     requirements = []
-    #print(f"{high.at[0, 'text']}")
+    print(f"{high.at[0, 'text']}")
     #print(f"{low.at[0, 'text']}")
     for df in [high, low]:
         for index, row in df.iterrows():
@@ -157,17 +157,27 @@ if __name__ == "__main__":
 
     #similarity_matrix = [[] * len(low)] * len(high)
     similarity_matrix = [] * len(high)
+    trace_link = [] * len(high)
     for h in range(0, len(high)):
+        print(h)
         row = [] * len(low)
+        hId = high.at[h, 'id']
+        trace_link[h] = [hId]
         for l in range(0, len(low)):
             arrH = np.array(vector_representation[h]).reshape(1, -1)
             arrL = np.array(vector_representation[len(high) + l]).reshape(1, -1)
-            row.append(cosine_similarity(arrH, arrL)[0][0])
+            sim = cosine_similarity(arrH, arrL)[0][0]
+            row.append(sim)
+            if sim > 0:
+                trace_link[h].append(low.at[l, 'id'])
         similarity_matrix.append(row)
-    print(similarity_matrix)
+    #print(similarity_matrix)
+    print(trace_link)
 
     #arrH = np.array([0.1, 0.5, 0.8]).reshape(1, -1)
     #arrL = np.array([0.5, 0.3, 0.9]).reshape(1, -1)
     #print(f"{cosine_similarity(arrH, arrL)}")
 
-    write_output_file()
+
+
+    write_output_file(trace_link)
