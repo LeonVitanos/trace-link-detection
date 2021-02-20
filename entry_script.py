@@ -163,7 +163,6 @@ if __name__ == "__main__":
     
     similarity_matrix = [] * len(high)
     trace_link = [] * len(high)
-    maxSim = 0
     for h in range(len(high)):
         row = [] * len(low)
         link_row = [high.at[h, 'id']]
@@ -174,17 +173,28 @@ if __name__ == "__main__":
             row.append(sim)
             if match_type == 0 and sim > 0:
                 link_row.append(low.at[l, 'id'])
-            if match_type == 1 and sim >= 0.25:
+            elif match_type == 1 and sim >= 0.25:
                 link_row.append(low.at[l, 'id'])
-            maxSim = max(maxSim, sim)
         similarity_matrix.append(row)
         trace_link.append(link_row)
+        if match_type == 2:
+            maxSim=max(similarity_matrix[h])
+            for l in range(len(low)):
+                    if similarity_matrix[h][l] >= 0.67 * maxSim:
+                        trace_link[h].append(low.at[l, 'id'])
+        elif match_type == 3:
+            maxSim=max(similarity_matrix[h])
+            for l in range(len(low)):
+                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.25:
+                        trace_link[h].append(low.at[l, 'id'])
 
+    '''
     if match_type == 2:
         for h in range(len(high)):
             for l in range(len(low)):
                 if similarity_matrix[h][l] >= 0.67 * maxSim:
                     trace_link[h].append(low.at[l, 'id'])
+    '''
 
     print(trace_link)
 
