@@ -27,9 +27,14 @@ def write_output_file(link):
         fieldnames = ["id", "links"]
 
         writer.writerow(fieldnames)
-
-        writer.writerow(["UC1", "L1, L34, L5"]) 
-        writer.writerow(["UC2", "L5, L4"]) 
+        for h in range(len(link)):
+            lnk = ""
+            for l in range(1, len(link[h])):
+                if lnk == "":
+                    lnk = link[h][l]
+                else:
+                    lnk = lnk +  "," + link[h][l]
+            writer.writerow([link[h][0], lnk])
 
 def preprocess(string):
     # Convert words to lower case and clean the text
@@ -125,7 +130,7 @@ if __name__ == "__main__":
 '''
     #Preprocess text and add it to the list of requirements
     requirements = []
-    print(f"{high.at[0, 'text']}")
+    #print(f"{high.at[0, 'text']}")
     #print(f"{low.at[0, 'text']}")
     for df in [high, low]:
         for index, row in df.iterrows():
@@ -155,29 +160,32 @@ if __name__ == "__main__":
     #print(f"{vector_representation[len(high)]}")
     #print(inverted)
 
-    #similarity_matrix = [[] * len(low)] * len(high)
+    
     similarity_matrix = [] * len(high)
     trace_link = [] * len(high)
-    for h in range(0, len(high)):
-        print(h)
+    maxSim = 0
+    for h in range(len(high)):
         row = [] * len(low)
-        hId = high.at[h, 'id']
-        trace_link[h] = [hId]
+        link_row = [high.at[h, 'id']]
         for l in range(0, len(low)):
             arrH = np.array(vector_representation[h]).reshape(1, -1)
             arrL = np.array(vector_representation[len(high) + l]).reshape(1, -1)
             sim = cosine_similarity(arrH, arrL)[0][0]
             row.append(sim)
-            if sim > 0:
-                trace_link[h].append(low.at[l, 'id'])
+            if match_type == 0 and sim > 0:
+                link_row.append(low.at[l, 'id'])
+            if match_type == 1 and sim >= 0.25:
+                link_row.append(low.at[l, 'id'])
+            maxSim = max(maxSim, sim)
         similarity_matrix.append(row)
-    #print(similarity_matrix)
+        trace_link.append(link_row)
+
+    if match_type == 2:
+        for h in range(len(high)):
+            for l in range(len(low)):
+                if similarity_matrix[h][l] >= 0.67 * maxSim:
+                    trace_link[h].append(low.at[l, 'id'])
+
     print(trace_link)
-
-    #arrH = np.array([0.1, 0.5, 0.8]).reshape(1, -1)
-    #arrL = np.array([0.5, 0.3, 0.9]).reshape(1, -1)
-    #print(f"{cosine_similarity(arrH, arrL)}")
-
-
 
     write_output_file(trace_link)
