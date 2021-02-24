@@ -196,6 +196,79 @@ if __name__ == "__main__":
                     trace_link[h].append(low.at[l, 'id'])
     '''
 
-    print(trace_link)
+    #print(trace_link)
 
     write_output_file(trace_link)
+
+    TP = 0 # True Positive, trace link manually identified and predicted by tool
+    FP = 0 # False Positive, trace link not manually identified, but predicted by tool
+    FN = 0 # False Negative, trace link manually identified, but not predicted by tool
+    TN = 0 # True Negative, trace link not manually identified and not predicted by tool
+
+    links = pd.read_csv("input/links.csv")
+    manual = []
+    for h in range(len(links)):
+        string = links.at[h, 'links']
+        row = []
+        if isinstance(string, str):
+            appending = False
+            number = ""
+            for ch in string:
+                if ch.isdigit():
+                    number += ch
+                    appending = True
+                if not ch.isdigit() and appending:
+                    row.append(int(number))
+                    number = ""
+                    appending = False
+            row.append(int(number))
+        manual.append(row)
+
+    links = pd.read_csv("output/links.csv")
+    predict = []
+    for h in range(len(links)):
+        string = links.at[h, 'links']
+        row = []
+        if isinstance(string, str):
+            appending = False
+            number = ""
+            for ch in string:
+                if ch.isdigit():
+                    number += ch
+                    appending = True
+                if not ch.isdigit() and appending:
+                    row.append(int(number))
+                    number = ""
+                    appending = False
+            row.append(int(number))
+        predict.append(row)
+
+    for h in range(len(manual)):
+        manLinks = manual[h]
+        preLinks = predict[h]
+        i = 0
+        j = 0
+        while i < len(manLinks) and j < len(preLinks):
+            if manLinks[i] == preLinks[j]:
+                TP += 1
+                i += 1
+                j += 1
+            else:
+                if manLinks[i] < preLinks[j]:
+                    FN += 1
+                    i += 1
+                else:
+                    FP += 1
+                    j += 1
+        while i < len(manLinks):
+            FN += 1
+            i += 1
+        while j < len(preLinks):
+            FP += 1
+            j += 1
+    TN = len(high) * len(low) - (TP + FN + FP)
+
+    print(f"True Positives: {TP}")
+    print(f"False Positives: {FP}")
+    print(f"False Negatives: {FN}")
+    print(f"True Negatives: {TN}")
