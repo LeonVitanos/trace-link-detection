@@ -13,7 +13,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 nltk.download('stopwords')
 STOP_WORDS = stopwords.words("english")
 REMOVE_STOPWORDS=True
-STEM_WORDS=True
+STEM_WORDS=False
 n_words = 0
 WNL = WordNetLemmatizer()
 
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         elif match_type == 3:
             maxSim=max(similarity_matrix[h])
             for l in range(nLow):
-                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.23:
+                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.2:
                         trace_link[h].append(low.at[l, 'id'])
 
     write_output_file(trace_link)
@@ -209,6 +209,8 @@ if __name__ == "__main__":
 
     nManual = len(manual)
     for h in range(nManual):
+        fn = "F"+str(h+1)+" \""
+        fp = "F"+str(h+1)+" \""
         manLinks = manual[h]
         preLinks = predict[h]
         i = 0
@@ -220,17 +222,27 @@ if __name__ == "__main__":
                 j += 1
             else:
                 if manLinks[i] < preLinks[j]:
+                    fn+=str("UC"+str(manLinks[i])+", ")
                     FN += 1
                     i += 1
                 else:
+                    fp+=str("UC"+str(preLinks[j])+", ")
                     FP += 1
                     j += 1
         while i < len(manLinks):
+            fn+=str("UC"+str(manLinks[i])+", ")
             FN += 1
             i += 1
         while j < len(preLinks):
+            fp+=str("UC"+str(preLinks[j])+", ")
             FP += 1
             j += 1
+        fn = fn[:-2]
+        fn+="\""
+        #print(fn)
+        fp = fp[:-2]
+        fp+="\""
+        print(fp)
     TN = nHigh * nLow - (TP + FN + FP)
 
     print("presision: ", TP/(TP+FP))
