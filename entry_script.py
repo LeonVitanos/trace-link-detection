@@ -13,7 +13,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 nltk.download('stopwords')
 STOP_WORDS = stopwords.words("english")
 REMOVE_STOPWORDS=True
-STEM_WORDS=False
+STEM_WORDS=True
 n_words = 0
 WNL = WordNetLemmatizer()
 
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         elif match_type == 3:
             maxSim=max(similarity_matrix[h])
             for l in range(nLow):
-                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.2:
+                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.13:
                         trace_link[h].append(low.at[l, 'id'])
 
     write_output_file(trace_link)
@@ -209,8 +209,6 @@ if __name__ == "__main__":
 
     nManual = len(manual)
     for h in range(nManual):
-        fn = "F"+str(h+1)+" \""
-        fp = "F"+str(h+1)+" \""
         manLinks = manual[h]
         preLinks = predict[h]
         i = 0
@@ -222,35 +220,27 @@ if __name__ == "__main__":
                 j += 1
             else:
                 if manLinks[i] < preLinks[j]:
-                    fn+=str("UC"+str(manLinks[i])+", ")
                     FN += 1
                     i += 1
                 else:
-                    fp+=str("UC"+str(preLinks[j])+", ")
                     FP += 1
                     j += 1
         while i < len(manLinks):
-            fn+=str("UC"+str(manLinks[i])+", ")
             FN += 1
             i += 1
         while j < len(preLinks):
-            fp+=str("UC"+str(preLinks[j])+", ")
             FP += 1
             j += 1
-        fn = fn[:-2]
-        fn+="\""
-        #print(fn)
-        fp = fp[:-2]
-        fp+="\""
-        print(fp)
     TN = nHigh * nLow - (TP + FN + FP)
 
-    print("presision: ", TP/(TP+FP))
-    print("recall: ", TP/(TP+FN))
+    precision = TP/(TP+FP)
+    recall = TP/(TP+FN)
+    print("precision: ", precision)
+    print("recall: ", recall)
+    print("f-score: ", 2*((precision*recall)/(precision+recall)))
 
-'''
+
     print(f"True Positives: {TP}")
     print(f"False Positives: {FP}")
     print(f"False Negatives: {FN}")
     print(f"True Negatives: {TN}")
-'''
