@@ -235,6 +235,7 @@ if __name__ == "__main__":
 
     precision = TP/(TP+FP)
     recall = TP/(TP+FN)
+    '''
     print("precision: ", precision)
     print("recall: ", recall)
     print("f-score: ", 2*((precision*recall)/(precision+recall)))
@@ -244,3 +245,4 @@ if __name__ == "__main__":
     print(f"False Positives: {FP}")
     print(f"False Negatives: {FN}")
     print(f"True Negatives: {TN}")
+    '''
