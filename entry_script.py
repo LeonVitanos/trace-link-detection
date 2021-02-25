@@ -8,25 +8,29 @@ import re
 from nltk.stem import SnowballStemmer
 import math
 from sklearn.metrics.pairwise import cosine_similarity
+from nltk.stem.wordnet import WordNetLemmatizer
 
 nltk.download('stopwords')
 STOP_WORDS = stopwords.words("english")
 REMOVE_STOPWORDS=True
 STEM_WORDS=True
 n_words = 0
+WNL = WordNetLemmatizer()
+
+def cutter(word):
+    if len(word) < 4:
+        return word
+    return WNL.lemmatize(WNL.lemmatize(word, "n"), "v")
 
 def write_output_file(link):
     '''
-    Writes a dummy output file using the python csv writer, update this 
-    to accept as parameter the found trace links. 
+    Writes the trace link list into a csv file
     '''
     with open('output/links.csv', 'w') as csvfile:
-
         writer = csv.writer(csvfile, delimiter=",", quotechar="\"", quoting=csv.QUOTE_MINIMAL)
-
         fieldnames = ["id", "links"]
-
         writer.writerow(fieldnames)
+
         for h in range(len(link)):
             lnk = ""
             for l in range(1, len(link[h])):
@@ -57,18 +61,19 @@ def preprocess(string):
         string = [w for w in string if not w in STOP_WORDS]
         string = " ".join(string)
 
-    # Optionally, shorten words to their stems
+    # Optionally, shorten words to their stems or lemmatize
     if STEM_WORDS:
           string = string.split()
           stemmer = SnowballStemmer('english')
           stemmed_words = [stemmer.stem(word) for word in string]
           string = " ".join(stemmed_words)
+    else:
+        string = ' '.join([cutter(w) for w in string.split()])
 
     return string
 
 #Vector representation
 def vr(r):
-    #print(r)
     words = r.split()
     word_count = len(words)
     weights = [0]*n_words
@@ -93,57 +98,28 @@ if __name__ == "__main__":
 
     print(f"Hello world, running with matchtype {match_type}!")
 
-    #GIVEN CODE, REMOVE IT?????
-    # Read input low-level requirements and count them (ignore header line).
-    #with open("input/low.csv", "r") as inputfile:
-      #  print(f"There are {len(inputfile.readlines()) - 1} low-level requirements")
-
     #Load high and low .csv files into pandas dataframes
     high = pd.read_csv("input/high.csv")
-    print(f"There are {len(high)} high-level requirements")
+    nHigh = len(high)
+    print(f"There are {nHigh} high-level requirements")
     low = pd.read_csv("input/low.csv")
-    print(f"There are {len(low)} low-level requirements")
+    nLow = len(low)
+    print(f"There are {nLow} low-level requirements")
     
     #Total number of requirements
-    n = len(high) + len(low)
+    n = nHigh + nLow
 
-    
-    #Preprocess text, add to master vocabulary, find frequency
-    '''master_vocabulary = []
-    tf = [] #frequency of words of the master vocabulary
-    d = [] #the number of requirements containing a word of the master vocabulary 
-    for df in [high, low]:
-        for index, row in df.iterrows():
-            r = preprocess(row['text']) #requirement
-            df.at[index, 'text'] = r
-            #Split words, add them to the master vocabulary, and find their frequencies
-            words = r.split()
-            words_added = []   
-            for word in words:
-                if word not in master_vocabulary:
-                    master_vocabulary.append(word)
-                    tf.append(1)
-                else:
-                    tf[master_vocabulary.index(word)] += 1
-                    #if word not in words_added:
-                       # d[master_vocabulary.index(word)] += 1
-'''
     #Preprocess text and add it to the list of requirements
     requirements = []
-    #print(f"{high.at[0, 'text']}")
-    #print(f"{low.at[0, 'text']}")
     for df in [high, low]:
         for index, row in df.iterrows():
             r = preprocess(row['text']) #requirement
             df.at[index, 'text'] = r
             requirements.append(r)
 
-    #print(f"{requirements[0]}")
-    #print(f"{requirements[len(high)]}")
-
     #Inverted index of words, i.e master vocabulary and in which requirements every word is at
     inverted = {}
-    for i in range(0,len(requirements)):
+    for i in range(n):
         words = requirements[i].split()    
         for word in words:
             inverted.setdefault(word, [])
@@ -156,19 +132,16 @@ if __name__ == "__main__":
     vector_representation = [] * n_words
     for r in requirements:
         vector_representation.append(vr(r))
-    #print(f"{vector_representation[0]}")
-    #print(f"{vector_representation[len(high)]}")
-    #print(inverted)
-
     
-    similarity_matrix = [] * len(high)
-    trace_link = [] * len(high)
-    for h in range(len(high)):
-        row = [] * len(low)
+    #Similarity matrix
+    similarity_matrix = [] * nHigh
+    trace_link = [] * nHigh
+    for h in range(nHigh):
+        row = [] * nLow
         link_row = [high.at[h, 'id']]
-        for l in range(0, len(low)):
+        for l in range(nLow):
             arrH = np.array(vector_representation[h]).reshape(1, -1)
-            arrL = np.array(vector_representation[len(high) + l]).reshape(1, -1)
+            arrL = np.array(vector_representation[nHigh + l]).reshape(1, -1)
             sim = cosine_similarity(arrH, arrL)[0][0]
             row.append(sim)
             if match_type == 0 and sim > 0:
@@ -179,24 +152,14 @@ if __name__ == "__main__":
         trace_link.append(link_row)
         if match_type == 2:
             maxSim=max(similarity_matrix[h])
-            for l in range(len(low)):
+            for l in range(nLow):
                     if similarity_matrix[h][l] >= 0.67 * maxSim:
                         trace_link[h].append(low.at[l, 'id'])
         elif match_type == 3:
             maxSim=max(similarity_matrix[h])
-            for l in range(len(low)):
-                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.25:
+            for l in range(nLow):
+                    if similarity_matrix[h][l] >= 0.67 * maxSim and similarity_matrix[h][l] >= 0.23:
                         trace_link[h].append(low.at[l, 'id'])
-
-    '''
-    if match_type == 2:
-        for h in range(len(high)):
-            for l in range(len(low)):
-                if similarity_matrix[h][l] >= 0.67 * maxSim:
-                    trace_link[h].append(low.at[l, 'id'])
-    '''
-
-    #print(trace_link)
 
     write_output_file(trace_link)
 
@@ -206,8 +169,9 @@ if __name__ == "__main__":
     TN = 0 # True Negative, trace link not manually identified and not predicted by tool
 
     links = pd.read_csv("input/links.csv")
+    nLinks = len(links)
     manual = []
-    for h in range(len(links)):
+    for h in range(nLinks):
         string = links.at[h, 'links']
         row = []
         if isinstance(string, str):
@@ -226,7 +190,7 @@ if __name__ == "__main__":
 
     links = pd.read_csv("output/links.csv")
     predict = []
-    for h in range(len(links)):
+    for h in range(nLinks):
         string = links.at[h, 'links']
         row = []
         if isinstance(string, str):
@@ -243,7 +207,8 @@ if __name__ == "__main__":
             row.append(int(number))
         predict.append(row)
 
-    for h in range(len(manual)):
+    nManual = len(manual)
+    for h in range(nManual):
         manLinks = manual[h]
         preLinks = predict[h]
         i = 0
@@ -266,9 +231,14 @@ if __name__ == "__main__":
         while j < len(preLinks):
             FP += 1
             j += 1
-    TN = len(high) * len(low) - (TP + FN + FP)
+    TN = nHigh * nLow - (TP + FN + FP)
 
+    print("presision: ", TP/(TP+FP))
+    print("recall: ", TP/(TP+FN))
+
+'''
     print(f"True Positives: {TP}")
     print(f"False Positives: {FP}")
     print(f"False Negatives: {FN}")
     print(f"True Negatives: {TN}")
+'''
